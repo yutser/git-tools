@@ -1,0 +1,8 @@
+target-file: "path/to/target/file"
+string-a: "old_string"
+string-b: "new_string"
+new-branch: "feature/update-string"
+repositories:
+  - name: "repo1"
+  - name: "repo2"
+  - name: "repo3"
