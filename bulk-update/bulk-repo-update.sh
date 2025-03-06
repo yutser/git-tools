@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# リポジトリリストファイル
-REPO_LIST="repo-list.yaml"
-
 # YAMLパーサーのインストール確認
 if ! command -v yq &> /dev/null; then
   echo "yq could not be found, please install it."
@@ -15,11 +12,17 @@ if ! command -v gh &> /dev/null; then
   exit 1
 fi
 
+# リポジトリリストファイル
+REPO_LIST="repo-list.yaml"
+
 # YAMLファイルから設定を読み込む
 TARGET_FILE=$(yq e '.target-file' "$REPO_LIST")
 NEW_BRANCH=$(yq e '.new-branch' "$REPO_LIST")
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
 strings=$(yq e '.strings' "$REPO_LIST")
+
+# PRリストを格納する配列
+PR_LIST=()
 
 # 現在のディレクトリ以下を検索
 for REPO_NAME in $repos; do
@@ -53,7 +56,8 @@ for REPO_NAME in $repos; do
       # リモートにプッシュ
       git push origin "$NEW_BRANCH"
       # プルリクエストを作成
-      gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE."
+      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
+      PR_LIST+=("$PR_URL")
     else
       echo "No changes made in $REPO_NAME"
     fi
@@ -62,4 +66,10 @@ for REPO_NAME in $repos; do
   else
     echo "Repository $REPO_NAME does not exist locally."
   fi
+done
+
+# 作成したPRのリストを出力
+echo "Created Pull Requests:"
+for PR in "${PR_LIST[@]}"; do
+  echo "$PR"
 done
