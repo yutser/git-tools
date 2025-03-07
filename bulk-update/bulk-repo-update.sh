@@ -19,7 +19,6 @@ REPO_LIST="repo-list.yaml"
 TARGET_FILE=$(yq e '.target-file' "$REPO_LIST")
 NEW_BRANCH=$(yq e '.new-branch' "$REPO_LIST")
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
-strings=$(yq e '.strings' "$REPO_LIST")
 
 # PRリストを格納する配列
 PR_LIST=()
