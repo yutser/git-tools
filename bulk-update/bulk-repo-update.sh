@@ -30,10 +30,10 @@ for REPO_NAME in $repos; do
   if [ -n "$REPO_PATH" ]; then
     cd "$REPO_PATH" || exit
     # 新しいブランチを作成
-    git checkout -b "$NEW_BRANCH"
+    git checkout -b $NEW_BRANCH
     # 指定されたファイルの文字列を置換または削除
     FILE_MODIFIED=false
-    for row in $(echo "${strings}" | yq -o=json | jq -c '.[]'); do
+    for row in $(yq e -o=json '.strings[]' "$REPO_LIST" | jq -c '.'); do
       OLD_STRING=$(echo "${row}" | jq -r '.old')
       NEW_STRING=$(echo "${row}" | jq -r '.new // empty')
       ACTION=$(echo "${row}" | jq -r '.action')
@@ -52,7 +52,7 @@ for REPO_NAME in $repos; do
     # 変更があった場合のみコミット
     if [ "$FILE_MODIFIED" = true ]; then
       git add "$TARGET_FILE"
-      git commit -m "Update strings in $TARGET_FILE"
+      git commit -m "Update $TARGET_FILE"
       # リモートにプッシュ
       git push origin "$NEW_BRANCH"
       # プルリクエストを作成
