@@ -1,0 +1,15 @@
+target-file: "path/to/target/file"
+new-branch: "feature/update-string"
+strings:
+  - old: "old_string1"
+    new: "new_string1"
+    action: "replace"
+  - old: "old_string2"
+    new: "new_string2"
+    action: "replace"
+  - old: "string_to_delete"
+    action: "delete"
+repositories:
+  - name: "repo1"
+  - name: "repo2"
+  - name: "repo3"
