@@ -13,7 +13,8 @@ if ! command -v gh &> /dev/null; then
 fi
 
 # リポジトリリストファイル
-REPO_LIST="repo-list.yaml"
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+REPO_LIST="$SCRIPT_DIR/repo-list.yaml"
 
 # YAMLファイルから設定を読み込む
 TARGET_FILE=$(yq e '.target-file' "$REPO_LIST")
@@ -23,9 +24,12 @@ repos=$(yq e '.repositories[].name' "$REPO_LIST")
 # PRリストを格納する配列
 PR_LIST=()
 
+# スクリプトの実行ディレクトリを保存
+SCRIPT_DIR=$(pwd)
+
 # 現在のディレクトリ以下を検索
 for REPO_NAME in $repos; do
-  REPO_PATH=$(find . -type d -name "$REPO_NAME" -print -quit)
+  REPO_PATH=$(find "$SCRIPT_DIR" -type d -name "$REPO_NAME" -print -quit)
   if [ -n "$REPO_PATH" ]; then
     cd "$REPO_PATH" || exit
     # 新しいブランチを作成
@@ -53,15 +57,15 @@ for REPO_NAME in $repos; do
       git add "$TARGET_FILE"
       git commit -m "Update $TARGET_FILE"
       # リモートにプッシュ
-      git push origin "$NEW_BRANCH"
+      #git push origin "$NEW_BRANCH"
       # プルリクエストを作成
-      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
-      PR_LIST+=("$PR_URL")
+      #PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
+      #PR_LIST+=("$PR_URL")
     else
       echo "No changes made in $REPO_NAME"
     fi
     # 元のディレクトリに戻る
-    cd - || exit
+    cd "$SCRIPT_DIR" || exit
   else
     echo "Repository $REPO_NAME does not exist locally."
   fi
