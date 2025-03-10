@@ -17,7 +17,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_LIST="$SCRIPT_DIR/repo-list.yaml"
 
 # YAMLファイルから設定を読み込む
-TARGET_FILE=$(yq e '.target-file' "$REPO_LIST")
+TARGET_FILE_NAME=$(yq e '.target-file' "$REPO_LIST")
 NEW_BRANCH=$(yq e '.new-branch' "$REPO_LIST")
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
 
@@ -34,6 +34,13 @@ for REPO_NAME in $repos; do
     cd "$REPO_PATH" || exit
     # 新しいブランチを作成
     git checkout -b $NEW_BRANCH
+    # 指定されたファイルをリポジトリ内で探索
+    TARGET_FILE=$(find . -type f -name "$TARGET_FILE_NAME" -print -quit)
+    if [ -z "$TARGET_FILE" ]; then
+      echo "Target file $TARGET_FILE_NAME not found in $REPO_NAME"
+      cd "$SCRIPT_DIR" || exit
+      continue
+    fi
     # 指定されたファイルの文字列を置換または削除
     FILE_MODIFIED=false
     for row in $(yq e -o=json '.strings[]' "$REPO_LIST" | jq -c '.'); do
@@ -42,7 +49,7 @@ for REPO_NAME in $repos; do
       ACTION=$(echo "${row}" | jq -r '.action')
       if [ "$ACTION" == "replace" ]; then
         if grep -q "$OLD_STRING" "$TARGET_FILE"; then
-          sed -i '' "s/$OLD_STRING/$NEW_STRING/g" "$TARGET_FILE"
+          sed -i '' "s|$OLD_STRING|$NEW_STRING|g" "$TARGET_FILE"
           FILE_MODIFIED=true
         fi
       elif [ "$ACTION" == "delete" ]; then
