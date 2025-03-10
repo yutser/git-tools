@@ -43,10 +43,11 @@ for REPO_NAME in $repos; do
     fi
     # 指定されたファイルの文字列を置換または削除
     FILE_MODIFIED=false
-    for row in $(yq e -o=json '.strings[]' "$REPO_LIST" | jq -c '.'); do
-      OLD_STRING=$(echo "${row}" | jq -r '.old')
-      NEW_STRING=$(echo "${row}" | jq -r '.new // empty')
-      ACTION=$(echo "${row}" | jq -r '.action')
+    num_strings=$(yq e '.strings | length' "$REPO_LIST")
+    for i in $(seq 0 $((num_strings - 1))); do
+      OLD_STRING=$(yq e ".strings[$i].old" "$REPO_LIST")
+      NEW_STRING=$(yq e ".strings[$i].new // \"\"" "$REPO_LIST")
+      ACTION=$(yq e ".strings[$i].action" "$REPO_LIST")
       if [ "$ACTION" == "replace" ]; then
         if grep -q "$OLD_STRING" "$TARGET_FILE"; then
           sed -i '' "s|$OLD_STRING|$NEW_STRING|g" "$TARGET_FILE"
