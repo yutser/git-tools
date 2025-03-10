@@ -65,10 +65,10 @@ for REPO_NAME in $repos; do
       git add "$TARGET_FILE"
       git commit -m "Update $TARGET_FILE"
       # リモートにプッシュ
-      #git push origin "$NEW_BRANCH"
+      git push origin "$NEW_BRANCH"
       # プルリクエストを作成
-      #PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
-      #PR_LIST+=("$PR_URL")
+      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
+      PR_LIST+=("$PR_URL")
     else
       echo "No changes made in $REPO_NAME"
     fi
