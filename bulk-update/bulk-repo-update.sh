@@ -17,6 +17,7 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_LIST="$SCRIPT_DIR/repo-list.yaml"
 
 # YAMLファイルから設定を読み込む
+echo "Reading configuration from $REPO_LIST"
 TARGET_FILE_NAME=$(yq e '.target-file' "$REPO_LIST")
 if [ -z "$TARGET_FILE_NAME" ]; then
   echo "Target file name not specified in $REPO_LIST"
@@ -35,6 +36,10 @@ if [ -z "$repos" ]; then
   exit 1
 fi
 
+echo "Target file: $TARGET_FILE_NAME"
+echo "New branch: $NEW_BRANCH"
+echo "Repositories: $repos"
+
 # PRリストを格納する配列
 PR_LIST=()
 
@@ -43,10 +48,13 @@ SCRIPT_DIR=$(pwd)
 
 # 現在のディレクトリ以下を検索
 for REPO_NAME in $repos; do
+  echo "Processing repository: $REPO_NAME"
   REPO_PATH=$(find "$SCRIPT_DIR" -type d -name "$REPO_NAME" -print -quit)
   if [ -n "$REPO_PATH" ]; then
+    echo "Found repository path: $REPO_PATH"
     cd "$REPO_PATH" || exit
     # 新しいブランチを作成
+    echo "Creating new branch: $NEW_BRANCH"
     git checkout -b $NEW_BRANCH
     # 指定されたファイルをリポジトリ内で探索
     TARGET_FILE=$(find . -type f -name "$TARGET_FILE_NAME" -print -quit)
@@ -55,6 +63,7 @@ for REPO_NAME in $repos; do
       cd "$SCRIPT_DIR" || exit
       continue
     fi
+    echo "Found target file: $TARGET_FILE"
     # 指定されたファイルの文字列を置換または削除
     FILE_MODIFIED=false
     num_strings=$(yq e '.strings | length' "$REPO_LIST")
@@ -62,27 +71,34 @@ for REPO_NAME in $repos; do
       OLD_STRING=$(yq e ".strings[$i].old" "$REPO_LIST")
       NEW_STRING=$(yq e ".strings[$i].new // \"\"" "$REPO_LIST")
       ACTION=$(yq e ".strings[$i].action" "$REPO_LIST")
+      echo "Processing string: $OLD_STRING -> $NEW_STRING (action: $ACTION)"
       if [ "$ACTION" == "replace" ]; then
         if grep -q "$OLD_STRING" "$TARGET_FILE"; then
           sed -i '' "s|$OLD_STRING|$NEW_STRING|g" "$TARGET_FILE"
           FILE_MODIFIED=true
+          echo "Replaced $OLD_STRING with $NEW_STRING in $TARGET_FILE"
         fi
       elif [ "$ACTION" == "delete" ]; then
         if grep -q "$OLD_STRING" "$TARGET_FILE"; then
           sed -i '' "/$OLD_STRING/d" "$TARGET_FILE"
           FILE_MODIFIED=true
+          echo "Deleted $OLD_STRING from $TARGET_FILE"
         fi
       fi
     done
     # 変更があった場合のみコミット
     if [ "$FILE_MODIFIED" = true ]; then
+      echo "Changes detected, committing changes"
       git add "$TARGET_FILE"
       git commit -m "Update $TARGET_FILE"
       # リモートにプッシュ
+      echo "Pushing branch $NEW_BRANCH to origin"
       git push origin "$NEW_BRANCH"
       # プルリクエストを作成
+      echo "Creating pull request"
       PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
       PR_LIST+=("$PR_URL")
+      echo "Pull request created: $PR_URL"
     else
       echo "No changes made in $REPO_NAME"
     fi
