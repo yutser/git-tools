@@ -61,6 +61,23 @@ for REPO_NAME in $repos; do
   if [ -n "$REPO_PATH" ]; then
     log_info "Found repository path: $REPO_PATH"
     cd "$REPO_PATH" || exit
+
+    # リポジトリを最新の状態に更新
+    log_info "Pulling latest changes for $REPO_NAME"
+    git pull origin main
+
+    # 現在のブランチがmainかどうか確認
+    CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    if [ "$CURRENT_BRANCH" != "main" ]; then
+      log_info "Current branch is not main in $REPO_NAME, switching to main"
+      git checkout main
+      if [ $? -ne 0 ]; then
+      log_error "Failed to switch to main branch in $REPO_NAME"
+      cd "$SCRIPT_DIR" || exit
+      continue
+      fi
+    fi
+
     # 新しいブランチを作成
     log_info "Creating new branch: $NEW_BRANCH"
     git checkout -b $NEW_BRANCH
