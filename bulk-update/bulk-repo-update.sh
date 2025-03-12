@@ -18,8 +18,22 @@ REPO_LIST="$SCRIPT_DIR/repo-list.yaml"
 
 # YAMLファイルから設定を読み込む
 TARGET_FILE_NAME=$(yq e '.target-file' "$REPO_LIST")
+if [ -z "$TARGET_FILE_NAME" ]; then
+  echo "Target file name not specified in $REPO_LIST"
+  exit 1
+fi
+
 NEW_BRANCH=$(yq e '.new-branch' "$REPO_LIST")
+if [ -z "$NEW_BRANCH" ]; then
+  echo "New branch name not specified in $REPO_LIST"
+  exit 1
+fi
+
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
+if [ -z "$repos" ]; then
+  echo "No repositories specified in $REPO_LIST"
+  exit 1
+fi
 
 # PRリストを格納する配列
 PR_LIST=()
