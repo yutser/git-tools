@@ -40,6 +40,9 @@ fi
 
 COMMIT_MESSAGE=$(yq e '.commit-message // "Update $TARGET_FILE_NAME"' "$REPO_LIST")
 
+PR_TITLE=$(yq e '.pr-title // "Update strings in $TARGET_FILE_NAME"' "$REPO_LIST")
+PR_BODY=$(yq e '.pr-body // "This PR updates multiple strings in $TARGET_FILE_NAME."' "$REPO_LIST")
+
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
 if [ -z "$repos" ]; then
   log_error "No repositories specified in $REPO_LIST"
@@ -49,6 +52,8 @@ fi
 log_info "Target file: $TARGET_FILE_NAME"
 log_info "New branch: $NEW_BRANCH"
 log_info "Repositories: $repos"
+log_info "PR title: $PR_TITLE"
+log_info "PR body: $PR_BODY"
 
 # PRリストを格納する配列
 PR_LIST=()
@@ -128,7 +133,7 @@ for REPO_NAME in $repos; do
       git push origin "$NEW_BRANCH"
       # プルリクエストを作成
       log_info "Creating pull request"
-      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
+      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "$PR_TITLE" --body "$PR_BODY")
       PR_LIST+=("$PR_URL")
       log_info "Pull request created: $PR_URL"
     else

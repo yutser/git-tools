@@ -1,6 +1,8 @@
 target-file: "path/to/target/file"
 new-branch: "feature/update-string"
 commit-message: "Custom commit message"
+pr-title: "Custom PR title"
+pr-body: "Custom PR body"
 strings:
   - old: "old_string1"
     new: "new_string1"
