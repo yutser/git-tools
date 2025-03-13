@@ -24,6 +24,9 @@ fi
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_LIST="$SCRIPT_DIR/repo-list.yaml"
 
+# PRテンプレートファイル
+PR_TEMPLATE_FILE="$SCRIPT_DIR/pr-template.md"
+
 # YAMLファイルから設定を読み込む
 log_info "Reading configuration from $REPO_LIST"
 TARGET_FILE_NAME=$(yq e '.target-file' "$REPO_LIST")
@@ -38,6 +41,16 @@ if [ -z "$NEW_BRANCH" ]; then
   exit 1
 fi
 
+COMMIT_MESSAGE=$(yq e '.commit-message // "Update $TARGET_FILE_NAME"' "$REPO_LIST")
+
+PR_TITLE=$(yq e '.pr-title // "Update strings in $TARGET_FILE_NAME"' "$REPO_LIST")
+
+if [ -n "$PR_TEMPLATE_FILE" ]; then
+  PR_BODY=$(cat "$PR_TEMPLATE_FILE")
+else
+  PR_BODY=$(yq e '.pr-body // "This PR updates multiple strings in $TARGET_FILE_NAME."' "$REPO_LIST")
+fi
+
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
 if [ -z "$repos" ]; then
   log_error "No repositories specified in $REPO_LIST"
@@ -47,6 +60,8 @@ fi
 log_info "Target file: $TARGET_FILE_NAME"
 log_info "New branch: $NEW_BRANCH"
 log_info "Repositories: $repos"
+log_info "PR title: $PR_TITLE"
+log_info "PR body: $PR_BODY"
 
 # PRリストを格納する配列
 PR_LIST=()
@@ -120,13 +135,13 @@ for REPO_NAME in $repos; do
     if [ "$FILE_MODIFIED" = true ]; then
       log_info "Changes detected, committing changes"
       git add "$TARGET_FILE"
-      git commit -m "Update $TARGET_FILE"
+      git commit -m "$COMMIT_MESSAGE"
       # リモートにプッシュ
       log_info "Pushing branch $NEW_BRANCH to origin"
       git push origin "$NEW_BRANCH"
       # プルリクエストを作成
       log_info "Creating pull request"
-      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "Update strings in $TARGET_FILE" --body "This PR updates multiple strings in $TARGET_FILE.")
+      PR_URL=$(gh pr create --base main --head "$NEW_BRANCH" --title "$PR_TITLE" --body "$PR_BODY")
       PR_LIST+=("$PR_URL")
       log_info "Pull request created: $PR_URL"
     else
