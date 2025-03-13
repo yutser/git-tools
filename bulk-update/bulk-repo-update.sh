@@ -1,5 +1,7 @@
 #!/bin/bash
 
+PR_TEMPLATE_FILE="$SCRIPT_DIR/pr-template.md"
+
 log_info() {
   echo "[INFO] $1"
 }
@@ -41,7 +43,12 @@ fi
 COMMIT_MESSAGE=$(yq e '.commit-message // "Update $TARGET_FILE_NAME"' "$REPO_LIST")
 
 PR_TITLE=$(yq e '.pr-title // "Update strings in $TARGET_FILE_NAME"' "$REPO_LIST")
-PR_BODY=$(yq e '.pr-body // "This PR updates multiple strings in $TARGET_FILE_NAME."' "$REPO_LIST")
+
+if [ -n "$PR_TEMPLATE_FILE" ]; then
+  PR_BODY=$(cat "$PR_TEMPLATE_FILE")
+else
+  PR_BODY=$(yq e '.pr-body // "This PR updates multiple strings in $TARGET_FILE_NAME."' "$REPO_LIST")
+fi
 
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
 if [ -z "$repos" ]; then
