@@ -79,8 +79,13 @@ for REPO_NAME in $repos; do
     fi
 
     # 新しいブランチを作成
-    log_info "Creating new branch: $NEW_BRANCH"
-    git checkout -b $NEW_BRANCH
+    if git show-ref --verify --quiet refs/heads/"$NEW_BRANCH"; then
+      log_info "Branch $NEW_BRANCH already exists, checking it out"
+      git checkout "$NEW_BRANCH"
+    else
+      log_info "Creating new branch: $NEW_BRANCH"
+      git checkout -b "$NEW_BRANCH"
+    fi
     # 指定されたファイルをリポジトリ内で探索
     TARGET_FILE=$(find . -type f -name "$TARGET_FILE_NAME" -print -quit)
     if [ -z "$TARGET_FILE" ]; then
