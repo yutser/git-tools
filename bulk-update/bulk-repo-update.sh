@@ -38,6 +38,8 @@ if [ -z "$NEW_BRANCH" ]; then
   exit 1
 fi
 
+COMMIT_MESSAGE=$(yq e '.commit-message // "Update $TARGET_FILE_NAME"' "$REPO_LIST")
+
 repos=$(yq e '.repositories[].name' "$REPO_LIST")
 if [ -z "$repos" ]; then
   log_error "No repositories specified in $REPO_LIST"
@@ -120,7 +122,7 @@ for REPO_NAME in $repos; do
     if [ "$FILE_MODIFIED" = true ]; then
       log_info "Changes detected, committing changes"
       git add "$TARGET_FILE"
-      git commit -m "Update $TARGET_FILE"
+      git commit -m "$COMMIT_MESSAGE"
       # リモートにプッシュ
       log_info "Pushing branch $NEW_BRANCH to origin"
       git push origin "$NEW_BRANCH"

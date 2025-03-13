@@ -1,5 +1,6 @@
 target-file: "path/to/target/file"
 new-branch: "feature/update-string"
+commit-message: "Custom commit message"
 strings:
   - old: "old_string1"
     new: "new_string1"
