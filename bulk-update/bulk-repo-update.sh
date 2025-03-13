@@ -1,7 +1,5 @@
 #!/bin/bash
 
-PR_TEMPLATE_FILE="$SCRIPT_DIR/pr-template.md"
-
 log_info() {
   echo "[INFO] $1"
 }
@@ -25,6 +23,9 @@ fi
 # リポジトリリストファイル
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 REPO_LIST="$SCRIPT_DIR/repo-list.yaml"
+
+# PRテンプレートファイル
+PR_TEMPLATE_FILE="$SCRIPT_DIR/pr-template.md"
 
 # YAMLファイルから設定を読み込む
 log_info "Reading configuration from $REPO_LIST"
