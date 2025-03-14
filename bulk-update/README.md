@@ -20,7 +20,9 @@ gh auth login
 1. `repo-list.yaml`ファイルを作成し、以下の形式でリポジトリと文字列の情報を記述します。
 
     ```yaml
-    target-file: "ファイル名"
+    target-files:
+      - "ファイル名1"
+      - "ファイル名2"
     new-branch: "新しいブランチ名"
     commit-message: "コミットメッセージ"
     pr-title: "PRのタイトル"
