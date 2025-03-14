@@ -29,9 +29,9 @@ PR_TEMPLATE_FILE="$SCRIPT_DIR/pr-template.md"
 
 # YAMLファイルから設定を読み込む
 log_info "Reading configuration from $REPO_LIST"
-TARGET_FILE_NAME=$(yq e '.target-file' "$REPO_LIST")
-if [ -z "$TARGET_FILE_NAME" ]; then
-  log_error "Target file name not specified in $REPO_LIST"
+TARGET_FILES=$(yq e '.target-files[]' "$REPO_LIST")
+if [ -z "$TARGET_FILES" ]; then
+  log_error "Target files not specified in $REPO_LIST"
   exit 1
 fi
 
@@ -57,7 +57,7 @@ if [ -z "$repos" ]; then
   exit 1
 fi
 
-log_info "Target file: $TARGET_FILE_NAME"
+log_info "Target files: $TARGET_FILES"
 log_info "New branch: $NEW_BRANCH"
 log_info "Repositories: $repos"
 log_info "PR title: $PR_TITLE"
@@ -101,40 +101,45 @@ for REPO_NAME in $repos; do
       log_info "Creating new branch: $NEW_BRANCH"
       git checkout -b "$NEW_BRANCH"
     fi
-    # 指定されたファイルをリポジトリ内で探索
-    TARGET_FILE=$(find . -type f -name "$TARGET_FILE_NAME" -print -quit)
-    if [ -z "$TARGET_FILE" ]; then
-      log_error "Target file $TARGET_FILE_NAME not found in $REPO_NAME"
-      cd "$SCRIPT_DIR" || exit
-      continue
-    fi
-    log_info "Found target file: $TARGET_FILE"
-    # 指定されたファイルの文字列を置換または削除
+
     FILE_MODIFIED=false
-    num_strings=$(yq e '.strings | length' "$REPO_LIST")
-    for i in $(seq 0 $((num_strings - 1))); do
-      OLD_STRING=$(yq e ".strings[$i].old" "$REPO_LIST")
-      NEW_STRING=$(yq e ".strings[$i].new // \"\"" "$REPO_LIST")
-      ACTION=$(yq e ".strings[$i].action" "$REPO_LIST")
-      log_info "Processing string: $OLD_STRING -> $NEW_STRING (action: $ACTION)"
-      if [ "$ACTION" == "replace" ]; then
-        if grep -q "$OLD_STRING" "$TARGET_FILE"; then
-          sed -i '' "s|$OLD_STRING|$NEW_STRING|g" "$TARGET_FILE"
-          FILE_MODIFIED=true
-          log_info "Replaced $OLD_STRING with $NEW_STRING in $TARGET_FILE"
+    for TARGET_FILE_NAME in $TARGET_FILES; do
+      # 指定されたファイルをリポジトリ内で探索
+      TARGET_FILE=$(find . -type f -name "$TARGET_FILE_NAME" -print -quit)
+      if [ -z "$TARGET_FILE" ]; then
+        log_error "Target file $TARGET_FILE_NAME not found in $REPO_NAME"
+        continue
+      fi
+      log_info "Found target file: $TARGET_FILE"
+      # 指定されたファイルの文字列を置換または削除
+      num_strings=$(yq e '.strings | length' "$REPO_LIST")
+      for i in $(seq 0 $((num_strings - 1))); do
+        OLD_STRING=$(yq e ".strings[$i].old" "$REPO_LIST")
+        NEW_STRING=$(yq e ".strings[$i].new // \"\"" "$REPO_LIST")
+        ACTION=$(yq e ".strings[$i].action" "$REPO_LIST")
+        log_info "Processing string: $OLD_STRING -> $NEW_STRING (action: $ACTION)"
+        if [ "$ACTION" == "replace" ]; then
+          if grep -q "$OLD_STRING" "$TARGET_FILE"; then
+            sed -i '' "s|$OLD_STRING|$NEW_STRING|g" "$TARGET_FILE"
+            FILE_MODIFIED=true
+            log_info "Replaced $OLD_STRING with $NEW_STRING in $TARGET_FILE"
+          fi
+        elif [ "$ACTION" == "delete" ]; then
+          if grep -q "$OLD_STRING" "$TARGET_FILE"; then
+            sed -i '' "/$OLD_STRING/d" "$TARGET_FILE"
+            FILE_MODIFIED=true
+            log_info "Deleted $OLD_STRING from $TARGET_FILE"
+          fi
         fi
-      elif [ "$ACTION" == "delete" ]; then
-        if grep -q "$OLD_STRING" "$TARGET_FILE"; then
-          sed -i '' "/$OLD_STRING/d" "$TARGET_FILE"
-          FILE_MODIFIED=true
-          log_info "Deleted $OLD_STRING from $TARGET_FILE"
-        fi
+      done
+      # 変更があった場合のみコミット
+      if [ "$FILE_MODIFIED" = true ]; then
+        log_info "Changes detected, committing changes"
+        git add "$TARGET_FILE"
       fi
     done
-    # 変更があった場合のみコミット
+
     if [ "$FILE_MODIFIED" = true ]; then
-      log_info "Changes detected, committing changes"
-      git add "$TARGET_FILE"
       git commit -m "$COMMIT_MESSAGE"
       # リモートにプッシュ
       log_info "Pushing branch $NEW_BRANCH to origin"

@@ -1,4 +1,6 @@
-target-file: "path/to/target/file"
+target-files:
+  - "file1"
+  - "file2"
 new-branch: "feature/update-string"
 commit-message: "Custom commit message"
 pr-title: Custom PR title
