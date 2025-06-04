@@ -133,6 +133,15 @@ for REPO_NAME in $repos; do
               FILE_MODIFIED=true
               log_info "Deleted $OLD_STRING from $TARGET_FILE"
             fi
+          elif [ "$ACTION" == "insert_after" ]; then
+            if grep -q "$OLD_STRING" "$TARGET_FILE"; then
+              # OLD_STRINGの直後にNEW_STRINGを挿入
+              sed -i '' "/$OLD_STRING/a\\
+$NEW_STRING
+" "$TARGET_FILE"
+              FILE_MODIFIED=true
+              log_info "Inserted $NEW_STRING after $OLD_STRING in $TARGET_FILE"
+            fi
           fi
         done
         # 変更があった場合のみコミット
