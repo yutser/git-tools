@@ -32,6 +32,9 @@ gh auth login
         action: "replace"
       - old: "削除する文字列"
         action: "delete"
+      - old: "OLD_STRING"
+        new: "NEW_STRING"
+        action: "insert-after"
     repositories:
       - name: "リポジトリ名1"
       - name: "リポジトリ名2"
@@ -46,6 +49,7 @@ gh auth login
     - Replaced old_string1 with new_string1
     - Replaced old_string2 with new_string2
     - Deleted string_to_delete
+    - Inserted NEW_STRING after OLD_STRING
 
     Please review the changes and provide feedback.
     ```
@@ -63,3 +67,4 @@ gh auth login
 ## 注意事項
 
 - スクリプトは現在のディレクトリ以下のリポジトリを検索します。リポジトリが存在しない場合はエラーメッセージが表示されます。
+- `action`には`replace`（置換）、`delete`（削除）、`insert-after`（指定文字列の直後に挿入）が指定できます。
